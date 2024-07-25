@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../services/api_services.dart';
 import '../../../../services/local_database_service/db_helper.dart';
 import 'category_state.dart';
@@ -12,6 +13,7 @@ class CategoryCubit extends Cubit<CategoryState> {
   String dropDownValue = "breads";
 
   Future<void> fetchCategory() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     emit(CategoryLoadingState());
     try {
       final response = await ApiService().dioApiCalling(
@@ -49,6 +51,7 @@ class CategoryCubit extends Cubit<CategoryState> {
       }
 
       emit(CategorySuccessState());
+      prefs.setBool("IsAddedCategory", true);
     } catch (e) {
       print(e);
       print("error CategoryCubit");

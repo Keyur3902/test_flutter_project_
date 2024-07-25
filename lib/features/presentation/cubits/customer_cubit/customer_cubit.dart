@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../services/api_services.dart';
 import '../../../../services/local_database_service/db_helper.dart';
 import '../../../data_layer/customer_model.dart';
@@ -13,6 +14,7 @@ class CustomerCubit extends Cubit<CustomerState> {
   String dropDownValue = "Tesco Ballymena";
 
   Future<void> fetchCustomers() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
     emit(CustomerLoadingState());
     try {
       customerDataLocal.clear();
@@ -55,6 +57,7 @@ class CustomerCubit extends Cubit<CustomerState> {
       //   customerDataLocal.add(Customer.fromJson(data[i]));
       // }
       emit(CustomerSuccessState());
+      prefs.setBool("IsAddedCustomer", true);
     } catch (e) {
       emit(CustomerFailState());
       print(e);

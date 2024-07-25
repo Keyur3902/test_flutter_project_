@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_flutter_project/features/presentation/cubits/order_cubit/order_state.dart';
 import '../../data_layer/customer_model.dart';
 import '../../data_layer/product_model.dart';
@@ -24,10 +25,31 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    getAll();
+  }
+
+  Future<void> getAll() async {
+    await fetchAllData();
     BlocProvider.of<OrderCubit>(context).getCartItemList();
     BlocProvider.of<CustomerCubit>(context).getCustomerDataFromLocal();
     BlocProvider.of<CategoryCubit>(context).getCategoryDataFromLocal();
     BlocProvider.of<ProductCubit>(context).getProductDataFromLocal();
+  }
+
+  Future<void> fetchAllData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? isAddedCustomer = prefs.getBool("IsAddedCustomer");
+    bool? isAddedCategory = prefs.getBool("IsAddedCategory");
+    bool? isAddedProduct = prefs.getBool("IsAddedProduct");
+    isAddedCustomer == true
+        ? null
+        : await BlocProvider.of<CustomerCubit>(context).fetchCustomers();
+    isAddedCategory == true
+        ? null
+        : await BlocProvider.of<CategoryCubit>(context).fetchCategory();
+    isAddedProduct == true
+        ? null
+        : await BlocProvider.of<ProductCubit>(context).fetchProducts();
   }
 
   @override
@@ -44,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 await BlocProvider.of<CustomerCubit>(context).fetchCustomers();
                 await BlocProvider.of<CategoryCubit>(context).fetchCategory();
                 await BlocProvider.of<ProductCubit>(context).fetchProducts();
+                await getAll();
               },
               icon: const Icon(
                 Icons.replay_outlined,
@@ -53,14 +76,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
-        child:
-            BlocBuilder<OrderCubit, OrderState>(builder: (context, orderState) {
+        child: BlocBuilder<OrderCubit, OrderState>(builder: (_, orderState) {
           return BlocBuilder<CategoryCubit, CategoryState>(
-              builder: (context, categoryState) {
+              builder: (_, categoryState) {
             return BlocBuilder<ProductCubit, ProductState>(
-                builder: (context, productState) {
+                builder: (_, productState) {
               return BlocBuilder<CustomerCubit, CustomerState>(
-                  builder: (context, customerState) {
+                  builder: (_, customerState) {
                 if (productState is ProductLoadingState ||
                     customerState is CustomerLoadingState ||
                     categoryState is CategoryLoadingState ||
@@ -133,7 +155,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Border.all(width: 1, color: Colors.black),
                                 color: Colors.black38,
                               ),
-                              child: Text("Name"),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
+                                child: Text("Name"),
+                              ),
                             ),
                           ),
                           Expanded(
@@ -145,7 +170,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Border.all(width: 1, color: Colors.black),
                                 color: Colors.black38,
                               ),
-                              child: Text("Qty"),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
+                                child: Text("Qty"),
+                              ),
                             ),
                           ),
                           Expanded(
@@ -157,7 +185,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Border.all(width: 1, color: Colors.black),
                                 color: Colors.black38,
                               ),
-                              child: Text("Unit Price"),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
+                                child: Text("Unit Price"),
+                              ),
                             ),
                           ),
                           Expanded(
@@ -169,7 +200,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Border.all(width: 1, color: Colors.black),
                                 color: Colors.black38,
                               ),
-                              child: Text("Total Price"),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
+                                child: Text("Total Price"),
+                              ),
                             ),
                           ),
                           Expanded(
@@ -181,14 +215,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Border.all(width: 1, color: Colors.black),
                                 color: Colors.black38,
                               ),
-                              child: Text("Net Price (%)"),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
+                                child: Text("Net Price (%)"),
+                              ),
                             ),
                           ),
                         ],
                       ),
                       Expanded(
                         child: ListView.builder(
-                          itemCount: BlocProvider.of<OrderCubit>(context).orderTable.length,
+                          itemCount: BlocProvider.of<OrderCubit>(context)
+                              .orderTable
+                              .length,
                           itemBuilder: (BuildContext context, int index) {
                             return Row(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -203,7 +242,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: 1, color: Colors.black),
                                       color: Colors.white,
                                     ),
-                                    child: Text(BlocProvider.of<OrderCubit>(context).orderTable[index].name),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
+                                      child: Text(
+                                          BlocProvider.of<OrderCubit>(context)
+                                              .orderTable[index]
+                                              .name),
+                                    ),
                                   ),
                                 ),
                                 Expanded(
@@ -215,7 +260,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: 1, color: Colors.black),
                                       color: Colors.white,
                                     ),
-                                    child: Text(BlocProvider.of<OrderCubit>(context).orderTable[index].quantity),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
+                                      child: Text(
+                                          BlocProvider.of<OrderCubit>(context)
+                                              .orderTable[index]
+                                              .quantity),
+                                    ),
                                   ),
                                 ),
                                 Expanded(
@@ -227,7 +278,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: 1, color: Colors.black),
                                       color: Colors.white,
                                     ),
-                                    child: Text(BlocProvider.of<OrderCubit>(context).orderTable[index].unitPrice),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
+                                      child: Text(
+                                          BlocProvider.of<OrderCubit>(context)
+                                              .orderTable[index]
+                                              .unitPrice),
+                                    ),
                                   ),
                                 ),
                                 Expanded(
@@ -239,7 +296,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: 1, color: Colors.black),
                                       color: Colors.white,
                                     ),
-                                    child: Text(BlocProvider.of<OrderCubit>(context).orderTable[index].totalPrice),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
+                                      child: Text(
+                                          BlocProvider.of<OrderCubit>(context)
+                                              .orderTable[index]
+                                              .totalPrice),
+                                    ),
                                   ),
                                 ),
                                 Expanded(
@@ -251,7 +314,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: 1, color: Colors.black),
                                       color: Colors.white,
                                     ),
-                                    child: Text(BlocProvider.of<OrderCubit>(context).orderTable[index].netPrice),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
+                                      child: Text(
+                                          BlocProvider.of<OrderCubit>(context)
+                                              .orderTable[index]
+                                              .netPrice),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -305,7 +374,8 @@ class _HomeScreenState extends State<HomeScreen> {
         }).toList(),
         value: BlocProvider.of<CustomerCubit>(context).dropDownValue,
         onChanged: (String? newValue) {
-          BlocProvider.of<CustomerCubit>(context).selectProduct(value: newValue!);
+          BlocProvider.of<CustomerCubit>(context)
+              .selectProduct(value: newValue!);
         },
         style: const TextStyle(color: Colors.black),
         icon: const Icon(Icons.arrow_drop_down),
@@ -317,14 +387,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Function to get price based on product name
   double getPriceByName(String name) {
-    for (var product in BlocProvider.of<ProductCubit>(context).productDataLocal) {
+    for (var product
+        in BlocProvider.of<ProductCubit>(context).productDataLocal) {
       if (product.name == name) {
         return product.price;
       }
     }
     throw Exception('Product not found');
   }
-
 
   Widget dropDownWidgetProduct({
     required List<Product> productList,
@@ -361,10 +431,12 @@ class _HomeScreenState extends State<HomeScreen> {
         }).toList(),
         value: BlocProvider.of<ProductCubit>(context).dropDownValue,
         onChanged: (String? newValue) {
-          var p = getPriceByName(newValue??"");
+          var p = getPriceByName(newValue ?? "");
           print("ppppp----$p");
-          BlocProvider.of<ProductCubit>(context).selectProduct(value: newValue??"");
-          BlocProvider.of<ProductCubit>(context).selectPrice(value: p.toString()??"");
+          BlocProvider.of<ProductCubit>(context)
+              .selectProduct(value: newValue ?? "");
+          BlocProvider.of<ProductCubit>(context)
+              .selectPrice(value: p.toString() ?? "");
         },
         style: const TextStyle(color: Colors.black),
         icon: const Icon(Icons.arrow_drop_down),
@@ -409,7 +481,8 @@ class _HomeScreenState extends State<HomeScreen> {
         }).toList(),
         value: BlocProvider.of<CategoryCubit>(context).dropDownValue,
         onChanged: (String? newValue) {
-          BlocProvider.of<CategoryCubit>(context).selectCategory(value: newValue!);
+          BlocProvider.of<CategoryCubit>(context)
+              .selectCategory(value: newValue!);
         },
         style: const TextStyle(color: Colors.black),
         icon: const Icon(Icons.arrow_drop_down),
@@ -460,16 +533,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundColor: Colors.red),
                   onPressed: () async {
                     BlocProvider.of<OrderCubit>(context).insertCartData(
-                        name: BlocProvider.of<ProductCubit>(context).dropDownValue,
+                        name: BlocProvider.of<ProductCubit>(context)
+                            .dropDownValue,
                         quantity: quantity.text,
-                        unitPrice: BlocProvider.of<ProductCubit>(context).selectP,
-                        totalPrice: (int.parse(quantity.text) * double.parse(BlocProvider.of<ProductCubit>(context).selectP))
+                        unitPrice:
+                            BlocProvider.of<ProductCubit>(context).selectP,
+                        totalPrice: (int.parse(quantity.text) *
+                                double.parse(BlocProvider.of<ProductCubit>(context)
+                                    .selectP))
                             .toString(),
-                        netPrice: (
-                            (int.parse(quantity.text) * double.parse(BlocProvider.of<ProductCubit>(context).selectP)) * (1 - BlocProvider.of<CustomerCubit>(context)
-                                .customerDataLocal[1]
-                                .discountPercentage / 100)
-                        ).toString());
+                        netPrice: ((int.parse(quantity.text) *
+                                    double.parse(
+                                        BlocProvider.of<ProductCubit>(context)
+                                            .selectP)) *
+                                (1 -
+                                    BlocProvider.of<CustomerCubit>(context)
+                                            .customerDataLocal[1]
+                                            .discountPercentage /
+                                        100))
+                            .toString());
                   },
                   child: const Text(
                     "Add",

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_flutter_project/features/presentation/cubits/product_cubit/product_state.dart';
 import '../../../../services/api_services.dart';
 import '../../../../services/local_database_service/db_helper.dart';
@@ -14,6 +15,7 @@ class ProductCubit extends Cubit<ProductState> {
   String selectP = "40.0";
 
   Future<void> fetchProducts() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     emit(ProductLoadingState());
     try {
       final response = await ApiService().dioApiCalling(
@@ -53,6 +55,7 @@ class ProductCubit extends Cubit<ProductState> {
 
 
       emit(ProductSuccessState());
+      prefs.setBool("IsAddedProduct", true);
     } catch (e) {
       print(e);
       print("error ProductCubit");
