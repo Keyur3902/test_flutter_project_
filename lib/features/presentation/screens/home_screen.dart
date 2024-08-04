@@ -1,7 +1,13 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:signature/signature.dart';
 import 'package:test_flutter_project/features/presentation/cubits/order_cubit/order_state.dart';
+import 'package:test_flutter_project/features/presentation/screens/order_details_sceen.dart';
 import '../../data_layer/customer_model.dart';
 import '../../data_layer/product_model.dart';
 import '../cubits/category_cubit/category_cubit.dart';
@@ -17,15 +23,29 @@ class HomeScreen extends StatefulWidget {
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
+  static const routeName = '/homeScreen';
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   TextEditingController quantity = TextEditingController();
 
+  final SignatureController _controller = SignatureController(
+    penStrokeWidth: 1,
+    penColor: Colors.red,
+    exportBackgroundColor: Colors.transparent,
+    exportPenColor: Colors.black,
+  );
+
   @override
   void initState() {
     super.initState();
     getAll();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> getAll() async {
@@ -34,6 +54,53 @@ class _HomeScreenState extends State<HomeScreen> {
     BlocProvider.of<CustomerCubit>(context).getCustomerDataFromLocal();
     BlocProvider.of<CategoryCubit>(context).getCategoryDataFromLocal();
     BlocProvider.of<ProductCubit>(context).getProductDataFromLocal();
+  }
+
+  Future<void> saveSignature() async {
+    PermissionStatus storagePermissionStatus = await Permission.storage.status;
+
+    if(!storagePermissionStatus.isGranted){
+      storagePermissionStatus = await Permission.storage.request();
+    }
+    if (storagePermissionStatus.isPermanentlyDenied) {
+      openAppSettings();
+    }
+    if (_controller.isNotEmpty) {
+      final signature = await _controller.toPngBytes();
+      if (signature != null) {
+
+        final Directory tempDir = await getApplicationSupportDirectory();
+        final file = File(tempDir.path);
+        await file.writeAsBytes(signature);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signature saved successfully!')),
+        );
+      }
+    }
+  }
+
+  Future<void> exportImage(BuildContext context) async {
+    if (_controller.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          key: Key('snackbarPNG'),
+          content: Text('No content'),
+        ),
+      );
+      return;
+    }
+
+    final Uint8List? data =
+    await _controller.toPngBytes(height: 1000, width: 1000);
+    if (data == null) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    await Navigator.pushNamed(context, OrderDetailsScreen.routeName, arguments: {'orderTable' : BlocProvider.of<OrderCubit>(context)
+        .orderTable,'signature': data});
   }
 
   Future<void> fetchAllData() async {
@@ -90,244 +157,220 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const Center(child: CircularProgressIndicator());
                 } else {
                   return Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Total Units :${BlocProvider.of<OrderCubit>(context).orderTable.length}",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade700,
-                            fontSize: 18),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Total Units :${BlocProvider.of<OrderCubit>(context).orderTable.length}",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade700,
+                                    fontSize: 18),
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Text(
+                                "Select Customer",
+                                style: TextStyle(
+                                    color: Colors.grey.shade700, fontSize: 18),
+                              ),
+                              dropDownWidgetCustomer(
+                                customerList:
+                                    BlocProvider.of<CustomerCubit>(context)
+                                        .customerDataLocal,
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Text(
+                                "Select Category",
+                                style: TextStyle(
+                                    color: Colors.grey.shade700, fontSize: 18),
+                              ),
+                              dropDownWidgetCategory(
+                                categoryList:
+                                    BlocProvider.of<CategoryCubit>(context)
+                                        .categoryDataLocal,
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Text(
+                                "Select Product",
+                                style: TextStyle(
+                                    color: Colors.grey.shade700, fontSize: 18),
+                              ),
+                              dropDownWidgetProduct(
+                                productList:
+                                    BlocProvider.of<ProductCubit>(context)
+                                        .productDataLocal,
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              addItemWidget(),
+                              const SizedBox(
+                                height: 30,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: Container(
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            width: 1, color: Colors.black),
+                                        color: Colors.black38,
+                                      ),
+                                      child: const Padding(
+                                        padding: EdgeInsets.only(
+                                            left: 5.0, top: 5.0),
+                                        child: Text("Name"),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Container(
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            width: 1, color: Colors.black),
+                                        color: Colors.black38,
+                                      ),
+                                      child: const Padding(
+                                        padding: EdgeInsets.only(
+                                            left: 5.0, top: 5.0),
+                                        child: Text("Qty"),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              InkWell(
+                                onTap: (){
+                                  Navigator.of(context).pushNamed(OrderDetailsScreen.routeName,
+                                      arguments: {
+                                        'orderTable': BlocProvider.of<OrderCubit>(context)
+                                            .orderTable
+                                      });
+                                },
+                                child: ListView.builder(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  shrinkWrap: true,
+                                  itemCount: BlocProvider.of<OrderCubit>(context)
+                                      .orderTable
+                                      .length,
+                                  itemBuilder: (BuildContext context, int index) {
+                                    return Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          flex: 2,
+                                          child: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  width: 1, color: Colors.black),
+                                              color: Colors.white,
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 5.0, top: 5.0),
+                                              child: Text(
+                                                  BlocProvider.of<OrderCubit>(
+                                                          context)
+                                                      .orderTable[index]
+                                                      .name),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  width: 1, color: Colors.black),
+                                              color: Colors.white,
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 5.0, top: 5.0),
+                                              child: Text(
+                                                  BlocProvider.of<OrderCubit>(
+                                                          context)
+                                                      .orderTable[index]
+                                                      .quantity),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(
-                        height: 10,
-                      ),
                       Text(
-                        "Select Customer",
+                        "Signature",
                         style: TextStyle(
                             color: Colors.grey.shade700, fontSize: 18),
                       ),
-                      dropDownWidgetCustomer(
-                        customerList: BlocProvider.of<CustomerCubit>(context)
-                            .customerDataLocal,
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        "Select Category",
-                        style: TextStyle(
-                            color: Colors.grey.shade700, fontSize: 18),
-                      ),
-                      dropDownWidgetCategory(
-                        categoryList: BlocProvider.of<CategoryCubit>(context)
-                            .categoryDataLocal,
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        "Select Product",
-                        style: TextStyle(
-                            color: Colors.grey.shade700, fontSize: 18),
-                      ),
-                      dropDownWidgetProduct(
-                        productList: BlocProvider.of<ProductCubit>(context)
-                            .productDataLocal,
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      addItemWidget(),
-                      SizedBox(
-                        height: 30,
+                      Container(
+                        height: 100,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(width: 1, color: Colors.black),
+                        ),
+                        child: Signature(
+                          controller: _controller,
+                          backgroundColor: Colors.white,
+                        ),
                       ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(
-                            flex: 2,
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(width: 1, color: Colors.black),
-                                color: Colors.black38,
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
-                                child: Text("Name"),
-                              ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red),
+                            onPressed: () {
+                              _controller.clear();
+                            },
+                            child: const Text(
+                              "Clear Signature",
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
-                          Expanded(
-                            flex: 1,
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(width: 1, color: Colors.black),
-                                color: Colors.black38,
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
-                                child: Text("Qty"),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(width: 1, color: Colors.black),
-                                color: Colors.black38,
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
-                                child: Text("Unit Price"),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(width: 1, color: Colors.black),
-                                color: Colors.black38,
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
-                                child: Text("Total Price"),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(width: 1, color: Colors.black),
-                                color: Colors.black38,
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 5.0, top: 5.0),
-                                child: Text("Net Price (%)"),
-                              ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green),
+                            onPressed: () {
+                              // saveSignature();
+                              exportImage(context);
+                            },
+                            child: const Text(
+                              "Save Signature",
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         ],
                       ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: BlocProvider.of<OrderCubit>(context)
-                              .orderTable
-                              .length,
-                          itemBuilder: (BuildContext context, int index) {
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Container(
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          width: 1, color: Colors.black),
-                                      color: Colors.white,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
-                                      child: Text(
-                                          BlocProvider.of<OrderCubit>(context)
-                                              .orderTable[index]
-                                              .name),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Container(
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          width: 1, color: Colors.black),
-                                      color: Colors.white,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
-                                      child: Text(
-                                          BlocProvider.of<OrderCubit>(context)
-                                              .orderTable[index]
-                                              .quantity),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Container(
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          width: 1, color: Colors.black),
-                                      color: Colors.white,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
-                                      child: Text(
-                                          BlocProvider.of<OrderCubit>(context)
-                                              .orderTable[index]
-                                              .unitPrice),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Container(
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          width: 1, color: Colors.black),
-                                      color: Colors.white,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
-                                      child: Text(
-                                          BlocProvider.of<OrderCubit>(context)
-                                              .orderTable[index]
-                                              .totalPrice),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Container(
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          width: 1, color: Colors.black),
-                                      color: Colors.white,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 5.0, top: 5.0),
-                                      child: Text(
-                                          BlocProvider.of<OrderCubit>(context)
-                                              .orderTable[index]
-                                              .netPrice),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      )
                     ],
                   );
                 }

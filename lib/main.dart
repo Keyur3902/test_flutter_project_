@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:test_flutter_project/features/presentation/cubits/order_cubit/order_cubit.dart';
+import 'package:test_flutter_project/routes/app_routes.dart';
 import 'package:test_flutter_project/services/local_database_service/db_helper.dart';
 import 'features/presentation/cubits/category_cubit/category_cubit.dart';
 import 'features/presentation/cubits/customer_cubit/customer_cubit.dart';
@@ -17,6 +18,10 @@ class MyApp extends StatelessWidget {
   const MyApp({
     super.key,
   });
+
+  static String getInitialRoute() {
+    return HomeScreen.routeName;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +40,9 @@ class MyApp extends StatelessWidget {
           create: (_) => OrderCubit(),
         ),
       ],
-      child: const MaterialApp(
-        home: HomeScreen(),
+      child: MaterialApp(
+        initialRoute: getInitialRoute(),
+        routes: AppRoutes.getAppRoutes,
       ),
     );
   }
