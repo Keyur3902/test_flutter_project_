@@ -575,26 +575,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.red),
                   onPressed: () async {
-                    BlocProvider.of<OrderCubit>(context).insertCartData(
-                        name: BlocProvider.of<ProductCubit>(context)
-                            .dropDownValue,
-                        quantity: quantity.text,
-                        unitPrice:
-                            BlocProvider.of<ProductCubit>(context).selectP,
-                        totalPrice: (int.parse(quantity.text) *
-                                double.parse(BlocProvider.of<ProductCubit>(context)
-                                    .selectP))
-                            .toString(),
-                        netPrice: ((int.parse(quantity.text) *
-                                    double.parse(
-                                        BlocProvider.of<ProductCubit>(context)
-                                            .selectP)) *
-                                (1 -
-                                    BlocProvider.of<CustomerCubit>(context)
-                                            .customerDataLocal[1]
-                                            .discountPercentage /
-                                        100))
-                            .toString());
+                    if(quantity.text.isEmpty || quantity.text == ''){
+                      const ScaffoldMessenger(child: Text("Please select Quantity"),);
+                    }
+                    else {
+                      BlocProvider.of<OrderCubit>(context).insertCartData(
+                          name: BlocProvider.of<ProductCubit>(context)
+                              .dropDownValue,
+                          quantity: quantity.text,
+                          unitPrice:
+                          BlocProvider.of<ProductCubit>(context).selectP,
+                          totalPrice: (int.parse(quantity.text) *
+                              double.parse(BlocProvider.of<ProductCubit>(context)
+                                  .selectP))
+                              .toString(),
+                          netPrice: ((int.parse(quantity.text) *
+                              double.parse(
+                                  BlocProvider.of<ProductCubit>(context)
+                                      .selectP)) *
+                              (1 -
+                                  BlocProvider.of<CustomerCubit>(context)
+                                      .customerDataLocal[1]
+                                      .discountPercentage /
+                                      100))
+                              .toString());
+                    }
                   },
                   child: const Text(
                     "Add",
@@ -604,18 +609,34 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        // TextButton(
-        //   style: TextButton.styleFrom(
-        //       shape: const RoundedRectangleBorder(
-        //         borderRadius: BorderRadius.all(Radius.circular(5)),
-        //       ),
-        //       foregroundColor: Colors.white,
-        //       backgroundColor: Colors.red),
-        //   onPressed: () {},
-        //   child: const Text(
-        //     "Remove",
-        //   ),
-        // )
+        Expanded(
+          child: TextButton(
+            style: TextButton.styleFrom(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(5)),
+                ),
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.red),
+            onPressed: () {},
+            child: const Text(
+              "Sub",
+            ),
+          ),
+        ),
+        Expanded(
+          child: TextButton(
+            style: TextButton.styleFrom(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(5)),
+                ),
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.red),
+            onPressed: () {},
+            child: const Text(
+              "Remove",
+            ),
+          ),
+        )
       ],
     );
   }
