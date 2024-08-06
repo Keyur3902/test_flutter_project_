@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> saveSignature() async {
     PermissionStatus storagePermissionStatus = await Permission.storage.status;
 
-    if(!storagePermissionStatus.isGranted){
+    if (!storagePermissionStatus.isGranted) {
       storagePermissionStatus = await Permission.storage.request();
     }
     if (storagePermissionStatus.isPermanentlyDenied) {
@@ -68,7 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_controller.isNotEmpty) {
       final signature = await _controller.toPngBytes();
       if (signature != null) {
-
         final Directory tempDir = await getApplicationSupportDirectory();
         final file = File(tempDir.path);
         await file.writeAsBytes(signature);
@@ -92,15 +91,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final Uint8List? data =
-    await _controller.toPngBytes(height: 1000, width: 1000);
+        await _controller.toPngBytes(height: 1000, width: 1000);
     if (data == null) {
       return;
     }
 
     if (!mounted) return;
 
-    await Navigator.pushNamed(context, OrderDetailsScreen.routeName, arguments: {'orderTable' : BlocProvider.of<OrderCubit>(context)
-        .orderTable,'signature': data});
+    await Navigator.pushNamed(context, OrderDetailsScreen.routeName,
+        arguments: {
+          'orderTable': BlocProvider.of<OrderCubit>(context).orderTable,
+          'signature': data
+        });
   }
 
   Future<void> fetchAllData() async {
@@ -258,22 +260,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                               InkWell(
-                                onTap: (){
-                                  Navigator.of(context).pushNamed(OrderDetailsScreen.routeName,
+                                onTap: () {
+                                  Navigator.of(context).pushNamed(
+                                      OrderDetailsScreen.routeName,
                                       arguments: {
-                                        'orderTable': BlocProvider.of<OrderCubit>(context)
-                                            .orderTable
+                                        'orderTable':
+                                            BlocProvider.of<OrderCubit>(context)
+                                                .orderTable
                                       });
                                 },
                                 child: ListView.builder(
                                   physics: const NeverScrollableScrollPhysics(),
                                   shrinkWrap: true,
-                                  itemCount: BlocProvider.of<OrderCubit>(context)
-                                      .orderTable
-                                      .length,
-                                  itemBuilder: (BuildContext context, int index) {
+                                  itemCount:
+                                      BlocProvider.of<OrderCubit>(context)
+                                          .orderTable
+                                          .length,
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
                                     return Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
                                       crossAxisAlignment:
                                           CrossAxisAlignment.center,
                                       children: [
@@ -283,7 +290,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             height: 50,
                                             decoration: BoxDecoration(
                                               border: Border.all(
-                                                  width: 1, color: Colors.black),
+                                                  width: 1,
+                                                  color: Colors.black),
                                               color: Colors.white,
                                             ),
                                             child: Padding(
@@ -303,7 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             height: 50,
                                             decoration: BoxDecoration(
                                               border: Border.all(
-                                                  width: 1, color: Colors.black),
+                                                  width: 1,
+                                                  color: Colors.black),
                                               color: Colors.white,
                                             ),
                                             child: Padding(
@@ -575,29 +584,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.red),
                   onPressed: () async {
-                    if(quantity.text.isEmpty || quantity.text == ''){
-                      const ScaffoldMessenger(child: Text("Please select Quantity"),);
-                    }
-                    else {
+                    if (quantity.text.isEmpty || quantity.text == '') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please add quantity'),
+                        ),
+                      );
+                    } else {
                       BlocProvider.of<OrderCubit>(context).insertCartData(
                           name: BlocProvider.of<ProductCubit>(context)
                               .dropDownValue,
                           quantity: quantity.text,
                           unitPrice:
-                          BlocProvider.of<ProductCubit>(context).selectP,
+                              BlocProvider.of<ProductCubit>(context).selectP,
                           totalPrice: (int.parse(quantity.text) *
-                              double.parse(BlocProvider.of<ProductCubit>(context)
-                                  .selectP))
+                                  double.parse(
+                                      BlocProvider.of<ProductCubit>(context)
+                                          .selectP))
                               .toString(),
                           netPrice: ((int.parse(quantity.text) *
-                              double.parse(
-                                  BlocProvider.of<ProductCubit>(context)
-                                      .selectP)) *
-                              (1 -
-                                  BlocProvider.of<CustomerCubit>(context)
-                                      .customerDataLocal[1]
-                                      .discountPercentage /
-                                      100))
+                                      double.parse(
+                                          BlocProvider.of<ProductCubit>(context)
+                                              .selectP)) *
+                                  (1 -
+                                      BlocProvider.of<CustomerCubit>(context)
+                                              .customerDataLocal[1]
+                                              .discountPercentage /
+                                          100))
                               .toString());
                     }
                   },
